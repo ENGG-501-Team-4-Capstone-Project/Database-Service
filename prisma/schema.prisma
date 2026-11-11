@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-model Equipment_Types {
+model EquipmentTypes {
   id          Int      @id @default(autoincrement())
   name        String   @unique
   description String?  @db.Text
@@ -15,7 +15,7 @@ model Equipment_Types {
 
   manuals                Manuals[]
   equipment              Equipment[]
-  inspectionRequirements Inspection_Requirements[]
+  inspectionRequirements InspectionRequirements[]
 
   @@map("equipment_types")
 }
@@ -28,7 +28,7 @@ model Equipment {
   serial_number     String?
   created_at        DateTime @default(now())
 
-  equipment_type Equipment_Types @relation(fields: [equipment_type_id], references: [id], map: "equipment_equipment_type_id_fk")
+  equipment_type EquipmentTypes @relation(fields: [equipment_type_id], references: [id], map: "equipment_equipment_type_id_fk")
 
   @@index([equipment_type_id])
   @@map("equipment")
@@ -43,14 +43,14 @@ model Manuals {
   file_path         String?  @db.Text
   created_at        DateTime @default(now())
 
-  equipment_type Equipment_Types? @relation(fields: [equipment_type_id], references: [id], map: "manuals_equipment_type_id_fk")
-  manualChunks   Manual_Chunks[]
+  equipment_type EquipmentTypes? @relation(fields: [equipment_type_id], references: [id], map: "manuals_equipment_type_id_fk")
+  manualChunks   ManualChunks[]
 
   @@index([equipment_type_id])
   @@map("manuals")
 }
 
-model Manual_Chunks {
+model ManualChunks {
   id            Int                    @id @default(autoincrement())
   manual_id     Int
   chunk_index   Int
@@ -75,34 +75,34 @@ model Users {
   id   Int  @id @default(autoincrement())
   role Role @default(INSPECTOR)
 
-  created_at             DateTime                  @default(now())
-  inspectionRequirements Inspection_Requirements[]
-  inspectionCriterias    Inspection_Criteria[]
+  created_at             DateTime                 @default(now())
+  inspectionRequirements InspectionRequirements[]
+  inspectionCriterias    InspectionCriteria[]
 
   @@map("users")
 }
 
-model Inspection_Requirements {
+model InspectionRequirements {
   id                Int    @id @default(autoincrement())
   creator_id        Int
   user              Users  @relation(fields: [creator_id], references: [id], map: "inspection_requirement_user_fk", onUpdate: Cascade)
   equipment_type_id Int
   title             String
 
-  equipment_type Equipment_Types       @relation(fields: [equipment_type_id], references: [id], map: "inspection_requirement_equipment_type_fk")
-  criteria       Inspection_Criteria[]
+  equipment_type EquipmentTypes       @relation(fields: [equipment_type_id], references: [id], map: "inspection_requirement_equipment_type_fk")
+  criteria       InspectionCriteria[]
 
   @@index([equipment_type_id])
   @@index([creator_id])
   @@map("inspection_requirements")
 }
 
-model Inspection_Criteria {
-  id                        Int                     @id @default(autoincrement())
+model InspectionCriteria {
+  id                        Int                    @id @default(autoincrement())
   verifier_id               Int
-  user                      Users                   @relation(fields: [verifier_id], references: [id], map: "inspection_criteria_user_fk")
+  user                      Users                  @relation(fields: [verifier_id], references: [id], map: "inspection_criteria_user_fk")
   inspection_requirement_id Int
-  insepction_requirement    Inspection_Requirements @relation(fields: [inspection_requirement_id], references: [id], map: "inspection_criteria_inspection_requirement_fk", onDelete: Cascade)
+  insepction_requirement    InspectionRequirements @relation(fields: [inspection_requirement_id], references: [id], map: "inspection_criteria_inspection_requirement_fk", onDelete: Cascade)
   pass_condition            String
   fail_condition            String
 

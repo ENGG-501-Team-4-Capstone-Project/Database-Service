@@ -6,3 +6,51 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Equipment_Types {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  created_at DateTime    @default(now())
+  manuals    Manuals[]
+  equipment  Equipment[]
+
+  @@map("equipment_types")
+}
+
+model Equipment {
+  id                Int             @id @default(autoincrement())
+  equipment_type_id Int
+  equipment_type    Equipment_Types @relation(fields: [equipment_type_id], references: [id], map: "equipment_equipment_type_fk")
+  manufacturer      String
+  model_number      String
+  serial_number     String          @unique
+
+  @@map("equipment")
+}
+
+model Manuals {
+  id                Int             @id @default(autoincrement())
+  equipment_type_id Int
+  equipment_type    Equipment_Types @relation(fields: [equipment_type_id], references: [id], map: "manual_equipment_type_fk")
+  title             String
+  manufacturer      String
+  version           Int             @unique @default(autoincrement())
+  file_path         String
+  manualChunks      Manual_Chunks[]
+
+  @@map("manuals")
+}
+
+model Manual_Chunks {
+  id            Int                          @id @default(autoincrement())
+  manual_id     Int
+  manual        Manuals                      @relation(fields: [manual_id], references: [id], map: "manual_chunk_manual_fk", onDelete: Cascade)
+  chunk_index   Int
+  chunk_text    String                       @db.Text
+  page_number   Int
+  section_title String
+  embedding     Unsupported("vector(1536)")?
+  created_at    DateTime                     @default(now())
+
+  @@map("manual_chunks")
+}

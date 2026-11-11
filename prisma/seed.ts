@@ -11,7 +11,7 @@ const prisma = new PrismaClient({
 
 async function main() {
   await prisma.$transaction(async (tx) => {
-    const equipmentType = await tx.equipment_Types.upsert({
+    const equipmentType = await tx.equipmentTypes.upsert({
       where: { name: 'Sling' },
       update: {},
       create: {
@@ -39,7 +39,7 @@ async function main() {
       }
     });
 
-    await tx.manual_Chunks.create({
+    await tx.manualChunks.create({
       data: {
         manual_id: manual.id,
         chunk_index: 0,
@@ -53,7 +53,7 @@ async function main() {
       data: { role: 'SUPERVISOR' }
     });
 
-    const requirement = await tx.inspection_Requirements.create({
+    const requirement = await tx.inspectionRequirements.create({
       data: {
         creator_id: supervisor.id,
         equipment_type_id: equipmentType.id,
@@ -61,7 +61,7 @@ async function main() {
       }
     });
 
-    await tx.inspection_Criteria.create({
+    await tx.inspectionCriteria.create({
       data: {
         verifier_id: supervisor.id,
         inspection_requirement_id: requirement.id,

@@ -6,3 +6,107 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Equipment_Types {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  created_at  DateTime @default(now())
+
+  manuals                Manuals[]
+  equipment              Equipment[]
+  inspectionRequirements Inspection_Requirements[]
+
+  @@map("equipment_types")
+}
+
+model Equipment {
+  id                Int      @id @default(autoincrement())
+  equipment_type_id Int
+  manufacturer      String?
+  model_number      String?
+  serial_number     String?
+  created_at        DateTime @default(now())
+
+  equipment_type Equipment_Types @relation(fields: [equipment_type_id], references: [id], map: "equipment_equipment_type_id_fk")
+
+  @@index([equipment_type_id])
+  @@map("equipment")
+}
+
+model Manuals {
+  id                Int      @id @default(autoincrement())
+  equipment_type_id Int?
+  title             String
+  manufacturer      String?
+  version           String?
+  file_path         String?  @db.Text
+  created_at        DateTime @default(now())
+
+  equipment_type Equipment_Types? @relation(fields: [equipment_type_id], references: [id], map: "manuals_equipment_type_id_fk")
+  manualChunks   Manual_Chunks[]
+
+  @@index([equipment_type_id])
+  @@map("manuals")
+}
+
+model Manual_Chunks {
+  id            Int                    @id @default(autoincrement())
+  manual_id     Int
+  chunk_index   Int
+  chunk_text    String                 @db.Text
+  page_number   Int?
+  section_title String?                @db.Text
+  embedding     Unsupported("vector")?
+  created_at    DateTime               @default(now())
+
+  manual Manuals @relation(fields: [manual_id], references: [id], onDelete: Cascade, map: "manual_chunks_manual_id_fk")
+
+  @@index([manual_id])
+  @@map("manual_chunks")
+}
+
+enum Role {
+  INSPECTOR
+  SUPERVISOR
+}
+
+model Users {
+  id   Int  @id @default(autoincrement())
+  role Role @default(INSPECTOR)
+
+  created_at             DateTime                  @default(now())
+  inspectionRequirements Inspection_Requirements[]
+  inspectionCriterias    Inspection_Criteria[]
+
+  @@map("users")
+}
+
+model Inspection_Requirements {
+  id                Int    @id @default(autoincrement())
+  creator_id        Int
+  user              Users  @relation(fields: [creator_id], references: [id], map: "inspection_requirement_user_fk", onUpdate: Cascade)
+  equipment_type_id Int
+  title             String
+
+  equipment_type Equipment_Types       @relation(fields: [equipment_type_id], references: [id], map: "inspection_requirement_equipment_type_fk")
+  criteria       Inspection_Criteria[]
+
+  @@index([equipment_type_id])
+  @@index([creator_id])
+  @@map("inspection_requirements")
+}
+
+model Inspection_Criteria {
+  id                        Int                     @id @default(autoincrement())
+  verifier_id               Int
+  user                      Users                   @relation(fields: [verifier_id], references: [id], map: "inspection_criteria_user_fk")
+  inspection_requirement_id Int
+  insepction_requirement    Inspection_Requirements @relation(fields: [inspection_requirement_id], references: [id], map: "inspection_criteria_inspection_requirement_fk", onDelete: Cascade)
+  pass_condition            String
+  fail_condition            String
+
+  @@index([verifier_id])
+  @@index([inspection_requirement_id])
+  @@map("inspection_criteria")
+}

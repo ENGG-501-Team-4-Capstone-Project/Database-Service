@@ -3,7 +3,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import type { ChunkSearchResult, ManualChunksPayload, ManualSearchQuery, UploadManualPayload } from '../types/routes/manual.js';
 
 export default function (server: FastifyInstance) {
-  server.get<{ Params: { id: string } }>('/manual/:id', async (request, reply) => {
+  server.get<{ Params: { id: string } }>('/manuals/:id', async (request, reply) => {
     const id = Number(request.params.id);
 
     if (!Number.isSafeInteger(id) || id <= 0) {
@@ -11,12 +11,7 @@ export default function (server: FastifyInstance) {
     }
 
     const manual = await server.prisma.manuals.findUnique({
-      where: { id },
-      include: {
-        manualChunks: {
-          orderBy: { chunk_index: 'asc' }
-        }
-      }
+      where: { id }
     });
 
     if (!manual) {

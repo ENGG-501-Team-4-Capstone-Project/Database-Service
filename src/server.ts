@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { prismaPlugin } from './plugins/prisma.js';
 import Fastify from 'fastify';
+import manuals from './routes/manuals.js';
 
 const envToLogger = {
   development: {
@@ -21,6 +22,7 @@ const fastify = Fastify({
 });
 
 await fastify.register(prismaPlugin);
+await fastify.register(manuals);
 
 fastify.get('/health', async (_request, reply) => {
   try {

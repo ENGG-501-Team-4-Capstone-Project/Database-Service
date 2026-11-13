@@ -72,17 +72,53 @@ export default function (server: FastifyInstance) {
     }
   });
 
-  server.post<{ Body: ManualChunksPayload }>('/manual-chunks', async (request, reply) => {
-    const chunks = request.body.chunks;
+  server.post<{
+    Params: { id: string };
+    Body: ManualChunksPayload;
+  }>('/manual/:id/chunks/batch', async (request, reply) => {
+    const rawManualId = request.params.id;
+    const manualId = Number(rawManualId);
+
+    if (!Number.isSafeInteger(manualId)) {
+      return reply.code(400).send({
+        error: `ManualId must be a safe integer but was given: ${rawManualId}`
+      });
+    }
+
+    const body = request.body;
+
+    if (typeof body !== 'object' || body === null || !('chunks' in body) || body.chunks === undefined) {
+      return reply.code(400).send({
+        error: 'No chunks were given in request'
+      });
+    }
+
+    const chunks = body.chunks;
+
+    if (!Array.isArray(chunks) || !chunks.every((chunk: unknown) => typeof chunk === 'object' && chunk !== null && !Array.isArray(chunk))) {
+      return reply.code(400).send({
+        error: 'Chunks must be an array of objects'
+      });
+    }
+
+    if (chunks.length === 0) {
+      return reply.code(200).send({ inserted: 0 });
+    }
 
     try {
       const inserted = await server.prisma.manualChunks.createMany({
-        data: chunks
+        data: chunks.map((chunk) => ({
+          ...chunk,
+          manual_id: manualId
+        }))
       });
-      return reply.code(200).send({ inserted: inserted.count });
+
+      return reply.code(200).send({ manual_id: manualId, saved_chunks: inserted.count, status: 'success' });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === 'P2003') {
-        return reply.code(400).send({ error: 'One or more manual IDs do not exist' });
+        return reply.code(400).send({
+          error: 'A referenced record does not exist'
+        });
       }
 
       throw error;
